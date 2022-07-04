@@ -1,0 +1,167 @@
+
+# subset id with kcd ------------------------------------------------------
+
+subset_id_with_kcd <- function(df, id_var, kcd_var, ...) {
+  id_var <- match_cols(df, vapply(substitute(id_var), deparse, "character"))
+  kcd_var <- match_cols(df, vapply(substitute(kcd_var), deparse, "character"))
+  dots <- list(...)
+  for (i in seq_along(dots)) {
+    key <- pull_code("^!", dots[[i]])
+    diz <- remv_code("^!", dots[[i]])
+    if (is.na(key)) {
+      z <- df[ unique(df[grepl(diz, df[[kcd_var]], perl = TRUE), ..id_var]), on = id_var]
+    } else {
+      z <- df[!unique(df[grepl(diz, df[[kcd_var]], perl = TRUE), ..id_var]), on = id_var]
+    }
+  }
+  return(z)
+}
+
+subset_id_with_kcd_ <- function(df, id_var, kcd_var, ...) {
+  dots <- list(...)
+  for (i in seq_along(dots)) {
+    key <- pull_code("^!", dots[[i]])
+    diz <- remv_code("^!", dots[[i]])
+    if (is.na(key)) {
+      z <- df[ unique(df[grepl(diz, df[[kcd_var]], perl = TRUE), ..id_var]), on = id_var]
+    } else {
+      z <- df[!unique(df[grepl(diz, df[[kcd_var]], perl = TRUE), ..id_var]), on = id_var]
+    }
+  }
+  return(z)
+}
+
+subset_id_with_kcd_terms <- function(df, id_var, kcd_var, from_var, to_var, udate, ...) {
+  # "": any diz, "!": no diz
+  id_var   <- match_cols(df, vapply(substitute(id_var) , deparse, "character"))
+  kcd_var  <- match_cols(df, vapply(substitute(kcd_var), deparse, "character"))
+  from_var <- match_cols(df, deparse(substitute(from_var)))
+  to_var   <- match_cols(df, deparse(substitute(to_var)))
+  kcd_terms <- list(...)
+  for (i in seq_along(kcd_terms)) {
+    fdate <- add_mon(udate, kcd_terms[[i]][[1L]] * 12)
+    tdate <- add_mon(udate, kcd_terms[[i]][[2L]] * 12)
+    key <- pull_code("^!", kcd_terms[[i]][[3L]])
+    diz <- remv_code("^!", kcd_terms[[i]][[3L]])
+    if (is.na(key)) {
+      if (diz != "") {
+        df <- df[unique(df[(df[[to_var]] >= fdate & df[[from_var]] < tdate) &
+                (grepl(diz, df[[kcd_var]], perl = TRUE)), ..id_var]), on = id_var]
+      } else {
+        df <- df[unique(df[(df[[to_var]] >= fdate & df[[from_var]] < tdate), ..id_var]), on = id_var]
+      }
+    } else {
+      if (diz != "") {
+        df <- df[!unique(df[(df[[to_var]] >= fdate & df[[from_var]] < tdate) &
+                (grepl(diz, df[[kcd_var]], perl = TRUE)), ..id_var]), on = id_var]
+      } else {
+        df <- df[!unique(df[(df[[to_var]] >= fdate & df[[from_var]] < tdate), ..id_var]), on = id_var]
+      }
+    }
+  }
+  return(df)
+}
+
+# id with kcd for a certain period ----------------------------------------
+
+id_with_kcd <- function(df, id_var, kcd_var, from_var, to_var, udate, start, end, kcd_code, col) {
+  if (start > end) stop("`start` has to be smaller than `end`")
+  id_var   <- match_cols(df, vapply(substitute(id_var), deparse, "character"))
+  kcd_var  <- match_cols(df, vapply(substitute(kcd_var), deparse, "character"))
+  from_var <- match_cols(df, deparse(substitute(from_var)))
+  to_var   <- match_cols(df, deparse(substitute(to_var)))
+  fdate <- add_mon(udate, start * 12) # from
+  tdate <- add_mon(udate, end   * 12) # to
+  d <- subset_id_with_kcd_(df[df[[to_var]] >= fdate & df[[from_var]] < tdate], id_var, kcd_var, kcd_code)
+  z <- unique(d[, ..id_var])
+  if (missing(col)) col <- sprintf("%s_%s_%s", kcd_code, start, end)
+  set(z, j = col, value = 1L)
+  return(z)
+}
+
+id_with_kcd_ <- function(df, id_var, kcd_var, from_var, to_var, udate, start, end, kcd_code, col) {
+  if (start > end) stop("`start` has to be smaller than `end`")
+  fdate <- add_mon(udate, start * 12) # from
+  tdate <- add_mon(udate, end   * 12) # to
+  d <- subset_id_with_kcd_(df[df[[to_var]] >= fdate & df[[from_var]] < tdate], id_var, kcd_var, kcd_code)
+  z <- unique(d[, ..id_var])
+  if (missing(col)) col <- sprintf("%s_%s_%s", kcd_code, start, end)
+  set(z, j = col, value = 1L)
+  return(z)
+}
+
+id_with_kcd_terms <- function(df, id_var, kcd_var, from_var, to_var, udate, ...) {
+  id_var   <- match_cols(df, vapply(substitute(id_var), deparse, "character"))
+  kcd_var  <- match_cols(df, vapply(substitute(kcd_var), deparse, "character"))
+  from_var <- match_cols(df, deparse(substitute(from_var)))
+  to_var   <- match_cols(df, deparse(substitute(to_var)))
+  kcd_terms <- list(...)
+
+  n <- length(kcd_terms)
+  l <- vector(mode = "list", length = n+1L)
+  l[[1L]] <- unique(df[, ..id_var])
+  l[2:length(l)] <- lapply(seq_along(kcd_terms),
+                           function(x) id_with_kcd_(df, id_var, kcd_var, from_var, to_var, udate,
+                                                    kcd_terms[[x]][[1L]],
+                                                    kcd_terms[[x]][[2L]],
+                                                    kcd_terms[[x]][[3L]]))
+  z <- Reduce(function(...) merge(..., by = id_var, all = T), l)
+  z[is.na(z)] <- 0
+
+  # column names
+  if (!is.null(names(kcd_terms)))
+    setnames(z, c(id_var, names(kcd_terms)))
+
+  # summarize
+  col <- diff_cols(z, id_var[[1]])
+  zs  <- z[, .(n = .N), by = col]
+  setorderv(zs, col)
+  attr(z, "raw") <- copy(zs)
+
+  for (i in 1:(length(col)-1L)) {
+    grp <- col[1:(length(col)-i)]
+    zs[, nsum := sum(n), by = grp]
+    zs[, ratio := n / nsum]
+    zs[, label := sprintf("%.2f%%", ratio * 100)]
+    attr(z, paste0("summary.", i)) <- copy(zs)
+  }
+  return(z)
+}
+
+kcd_dist <- function(df, id_var, kcd_var, from_var, to_var, group_var, udate, start, end, multiple = 100) {
+  if (start > end) stop("`start` has to be smaller than `end`")
+  id_var    <- match_cols(df, vapply(substitute(id_var), deparse, "character"))
+  kcd_var   <- match_cols(df, vapply(substitute(kcd_var), deparse, "character"))
+  from_var  <- match_cols(df, deparse(substitute(from_var)))
+  to_var    <- match_cols(df, deparse(substitute(to_var)))
+  group_var <- match_cols(df, vapply(substitute(group_var), deparse, "character"))
+
+  cols <- c(kcd_var, from_var, to_var)
+
+  fdate <- add_mon(udate, start * 12) # from
+  tdate <- add_mon(udate, end   * 12) # to
+
+  incl <- df[ (get(to_var) >= fdate & get(from_var) < tdate)] #     having past data
+  excl <- df[!(get(to_var) >= fdate & get(from_var) < tdate)] # not having past data
+  excl[, (cols) := lapply(.SD, function(x) `<-`(x, NA)), .SDcols = cols]
+  excl <- unique(excl)[!incl, on = id_var]
+  dz <- rbind(incl, excl)
+  z <- get_prop_(dz, group_var, id_var, multiple = multiple)
+  return(z)
+}
+
+kcd_dist_ <- function(df, id_var, kcd_var, from_var, to_var, group_var, udate, start, end, multiple = 100) {
+  if (start > end) stop("`start` has to be smaller than `end`")
+  cols <- c(kcd_var, from_var, to_var)
+
+  fdate <- add_mon(udate, start * 12) # from
+  tdate <- add_mon(udate, end   * 12) # to
+
+  incl <- df[ (get(to_var) >= fdate & get(from_var) < tdate)] #     having past data
+  excl <- df[!(get(to_var) >= fdate & get(from_var) < tdate)] # not having past data
+  excl[, (cols) := lapply(.SD, function(x) `<-`(x, NA)), .SDcols = cols]
+  excl <- unique(excl)[!incl, on = id_var]
+  dz <- rbind(incl, excl)
+  z <- get_prop_(dz, group_var, id_var, multiple = multiple)
+  return(z)
+}
