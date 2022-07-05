@@ -81,18 +81,13 @@ SEXP set_one_upper_first(SEXP x, SEXP id) {
       col = j * m;
       flag = (ix[col] > 0) ? 0 : 1;
       ix[col] = 1;
-      for (j = 0; j < n; ++j) {
-        col = j * m;
-        flag = (ix[col] > 0) ? 0 : 1;
-        ix[col] = 1;
-        for (i = 1; i < m; ++i) {
-          if (strcmp(CHAR(STRING_ELT(id, i-1)), CHAR(STRING_ELT(id, i)))) {
-            flag = (ix[col + i] > 0) ? 0 : 1;
-            ix[col + i] = 1;
-          } else {
-            ix[col + i] = flag;
-            flag = (ix[col + i] > 0) ? 0 : flag; // before meeting one, flag turns to zero, if not flag is one.
-          }
+      for (i = 1; i < m; ++i) {
+        if (strcmp(CHAR(STRING_ELT(id, i-1)), CHAR(STRING_ELT(id, i)))) {
+          flag = (ix[col + i] > 0) ? 0 : 1;
+          ix[col + i] = 1;
+        } else {
+          ix[col + i] = flag;
+          flag = (ix[col + i] > 0) ? 0 : flag; // before meeting one, flag turns to zero, if not flag is one.
         }
       }
     }
@@ -104,18 +99,13 @@ SEXP set_one_upper_first(SEXP x, SEXP id) {
       col = j * m;
       flag = (ix[col] > 0) ? 0 : 1;
       ix[col] = 1;
-      for (j = 0; j < n; ++j) {
-        col = j * m;
-        flag = (ix[col] > 0) ? 0 : 1;
-        ix[col] = 1;
-        for (i = 1; i < m; ++i) {
-          if (strcmp(CHAR(STRING_ELT(id, i-1)), CHAR(STRING_ELT(id, i)))) {
-            flag = (ix[col + i] > 0) ? 0 : 1;
-            ix[col + i] = 1;
-          } else {
-            ix[col + i] = flag;
-            flag = (ix[col + i] > 0) ? 0 : flag; // before meeting one, flag turns to zero, if not flag is one.
-          }
+      for (i = 1; i < m; ++i) {
+        if (strcmp(CHAR(STRING_ELT(id, i-1)), CHAR(STRING_ELT(id, i)))) {
+          flag = (ix[col + i] > 0) ? 0 : 1;
+          ix[col + i] = 1;
+        } else {
+          ix[col + i] = flag;
+          flag = (ix[col + i] > 0) ? 0 : flag; // before meeting one, flag turns to zero, if not flag is one.
         }
       }
     }
