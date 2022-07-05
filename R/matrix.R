@@ -11,11 +11,11 @@ rowvec <- function(x) array(x, dim = c(1L, length(x)), dimnames = list(NULL, nam
 
 # matrix ------------------------------------------------------------------
 
-ones    <- function(dim) array(1, dim = dim)
-zeros   <- function(dim) array(0, dim = dim)
+ones    <- function(dim) array(1L, dim = dim)
+zeros   <- function(dim) array(0L, dim = dim)
 strings <- function(dim) array(NA_character_, dim = dim)
 numbers <- function(dim) array(seq_len(prod(dim)), dim = dim)
-randoms <- function(dim, x = c(0, 1), replace = TRUE, prob = NULL)
+randoms <- function(dim, x = c(0L, 1L), replace = TRUE, prob = NULL)
   array(sample(x, size = prod(dim), replace = replace, prob = prob), dim = dim)
 
 # names -------------------------------------------------------------------
