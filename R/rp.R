@@ -59,8 +59,8 @@ get_rp_matrix <- function(risk_info, claim_info, igender, iage, igrade, mon, pro
       rp_tbl <- app_tbl[, .(age, rp = rate * rate2 * amount_mean / 12)]
       rp_mat <- reprow(rowvec(rp_tbl$rp), 12)
       pd_mat <- numbers(dim(rp_mat))
-      reduction_period_start  <- app_tbl$reduction_period_start * 12
-      reduction_period_end    <- app_tbl$reduction_period_end * 12
+      reduction_period_start  <- app_tbl$reduction_period_start
+      reduction_period_end    <- app_tbl$reduction_period_end
       reduction_period_ratio  <- app_tbl$reduction_period_ratio
       rd_mat <- ratio_by_period(pd_mat,
                                 reduction_period_start,
