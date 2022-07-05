@@ -197,11 +197,11 @@ loss_simulation <- function(claim_info, df, udate, mon = 60, group = 1, unit = 1
   rn                     <- claim_info$rn
   cvd_kcd                <- claim_info$cvd_kcd
   cvd_level              <- claim_info$cvd_level
-  reduction_period_start <- claim_info$reduction_period_start
-  reduction_period_end   <- claim_info$reduction_period_end
+  reduction_period_start <- claim_info$reduction_period_start * 12
+  reduction_period_end   <- claim_info$reduction_period_end * 12
   reduction_period_ratio <- claim_info$reduction_period_ratio
-  waiting_period_start   <- claim_info$waiting_period_start
-  waiting_period_end     <- claim_info$waiting_period_end
+  waiting_period_start   <- claim_info$waiting_period_start * 12
+  waiting_period_end     <- claim_info$waiting_period_end * 12
   one_time               <- claim_info$one_time
   expiration             <- claim_info$expiration
   amount_mean            <- claim_info$amount_mean

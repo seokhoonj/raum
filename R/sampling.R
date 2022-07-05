@@ -24,7 +24,7 @@ strat_sampling <- function(df, group_var, size, replace = TRUE, contain_zero = F
     set(group, j = "s", value = do.call(method, list(x = group$n * size)))
   } else if (size >= 1) {
     method <- "none"
-    set(group, j = "s", value = ifelse(group$n > size, size, group$n))
+    set(group, j = "s", value = size)
   }
   if (!contain_zero)
     set(group, i = which(group$s == 0), j = "s", value = 1)

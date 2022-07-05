@@ -59,10 +59,13 @@ get_rp_matrix <- function(risk_info, claim_info, igender, iage, igrade, mon, pro
       rp_tbl <- app_tbl[, .(age, rp = rate * rate2 * amount_mean / 12)]
       rp_mat <- reprow(rowvec(rp_tbl$rp), 12)
       pd_mat <- numbers(dim(rp_mat))
-      start  <- app_tbl$reduction_period_start
-      end    <- app_tbl$reduction_period_end
-      ratio  <- app_tbl$reduction_period_ratio
-      rd_mat <- ratio_by_period(pd_mat, start, end, ratio) # to be modified
+      reduction_period_start  <- app_tbl$reduction_period_start * 12
+      reduction_period_end    <- app_tbl$reduction_period_end * 12
+      reduction_period_ratio  <- app_tbl$reduction_period_ratio
+      rd_mat <- ratio_by_period(pd_mat,
+                                reduction_period_start,
+                                reduction_period_end,
+                                reduction_period_ratio) # to be modified
       rp <- structure(rp_mat * rd_mat, dimnames = list(1:12, app_tbl$age))
       risk_list[[i]] <- structure(
         colvec(rp[seq_len(mon)]), dimnames = list(NULL, rid_info$risk[i]))
@@ -132,8 +135,8 @@ count_pay_num <- function(claim_info, df, udate, mon, waiting = T) {
   cvd_kcd    <- claim_info$cvd_kcd
   one_time   <- claim_info$one_time
   expiration <- claim_info$expiration
-  waiting_period_start <- claim_info$waiting_period_start
-  waiting_period_end   <- claim_info$waiting_period_end
+  waiting_period_start <- claim_info$waiting_period_start * 12
+  waiting_period_end   <- claim_info$waiting_period_end * 12
 
   # order
   setorder(df, id, sdate, edate)
