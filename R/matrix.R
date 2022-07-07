@@ -36,6 +36,7 @@ traverse <- function(x, y) .Call(raum_traverse, x, y)
 rotate   <- function(x, angle) .Call(raum_rotate, x, angle)
 repcol   <- function(x, each) .Call(raum_repcol, x, each)
 upper    <- function(x, y) .Call(raum_upper, x, y)
+uncumprod <- function(x) c(x[1L], exp(diff(log(x))))
 only_first <- function(x, id, ot) .Call(raum_only_first, x, id, ot)
 set_only_first <- function(x, id, ot) invisible(.Call(raum_set_only_first, x, id, ot))
 one_upper_first <- function(x, id) {
@@ -255,13 +256,3 @@ add_kcd <- function(df, col, dot = TRUE, lang = c("ko", "en")) {
     df[copybook, on = col, (new_col) := i.en]
   }
 }
-
-# df <- copy(td)
-# tbl <- data.table(table(table(df$id)))
-# setnames(tbl, c("line", "n"))
-# set(tbl, j = "line", value = as.numeric(tbl$line))
-# set(tbl, j = "prop", value = tbl$n / sum(tbl$n))
-# set(tbl, j = "minus_log_prop", value = -log(tbl$prop))
-# set(tbl, j = "csum_minus_log_prop", value = cumsum(tbl$minus_log_prop))
-# set(tbl, j = "fit", value = tbl$line^1.33)
-

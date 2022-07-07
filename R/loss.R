@@ -92,47 +92,6 @@ diff_period <- function(start, end, group = 1) {
   return(z)
 }
 
-# count_to_binary_matrix <- function(x, n) {
-#   #   a b c d
-#   # 1 6 2 9 5
-#   # 2 8 3 0 7
-#
-#   #   a b c d
-#   # 1 1 1 1 1
-#   # 1 1 1 1 1
-#   # 1 0 0 1 1
-#   # 1 0 0 0 1
-#   # 1 0 0 0 1
-#   # 2 1 1 1 1
-#   # 2 0 1 1 0
-#   # 2 0 1 1 0
-#   # 2 0 0 1 0
-#   # 2 0 0 0 0
-#   mx <- ones(dim(x)) * n # maximum
-#   dx <- mx - x # differences
-#   tx <- traverse(x, dx)
-#   bx <- rep(c(1L, 0L), length(x)) # binary
-#   matrix(rep(bx, times = tx), ncol = ncol(x),
-#          dimnames = list(rep(rownames(x), each = n), colnames(x)))
-# }
-
-# rp vs loss
-# rp: monthly based
-# loss: occurred date based
-
-# clm_mon_to_count_pay_num_matrix <- function(clm_mon, one_time, expiration, mon) { # not used
-#   # row names
-#   rn <- rownames(clm_mon)
-#   # sum
-#   clm_mon_max <- row_max_by_rownames(clm_mon)
-#   clm_mon_max[clm_mon_max == 0] <- mon
-#   clm_mon_cap <- structure(ones(dim(clm_mon_max)) * mon, dimnames = dimnames(clm_mon_max))
-#
-#   # continuous vs one_time
-#   m <- overlap_matrix(clm_mon_cap, clm_mon_max, one_time)
-#   apply_expiration(m, expiration)
-# }
-
 period_to_binary_loss <- function(period, one_time, expiration) { # period after period[clm == 0] <- 0
   # row names
   rn <- rownames(period)
@@ -154,27 +113,6 @@ period_to_binary_loss <- function(period, one_time, expiration) { # period after
   matrix(rep(bin_trv, times = clm_trv), ncol = ncol(clm_row_cmb),
          dimnames = list(rep(rownames(clm_row_cmb), times = row_interval), colnames(clm_row_cmb)))
 }
-
-# period_to_binary_loss2 <- function(period, one_time, expiration) { # period after period[clm == 0] <- 0
-#   # row names
-#   rn <- rownames(period)
-#   # sum
-#   clm_row_cnt <- row_sum_by_rn(one_upper_first(period, rn)) # one_time is not applied
-#   # apply expiration condition
-#   clm_row_exp <- repcol(apply_expiration(clm_row_cnt, expiration),
-#                         each = change_interval(colnames(clm_row_cnt)))
-#   # maximum payment
-#   row_interval <- change_interval(rn)
-#   clm_row_cap  <- structure(repcol(colvec(row_interval), ncol(clm_row_cnt)), dimnames = dimnames(clm_row_cnt))
-#   # continuous vs one_time
-#   clm_row_cmb <- overlap_matrix(clm_row_cap, clm_row_exp, one_time)
-#   # binary matrix
-#   period_gap <- clm_row_cap - clm_row_cmb # differences
-#   clm_trv <- traverse(clm_row_cmb, period_gap)
-#   bin_trv <- rep(c(1L, 0L), length(clm_row_cmb)) # binary
-#   matrix(rep(bin_trv, times = clm_trv), ncol = ncol(clm_row_cmb),
-#          dimnames = list(rep(rownames(clm_row_cmb), times = row_interval), colnames(clm_row_cmb)))
-# }
 
 leave_positive_loss <- function(loss_obj) { # leave rows the sum of rows are greater than 0
   loss_obj_name <- deparse(substitute(loss_obj))

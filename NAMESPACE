@@ -172,6 +172,8 @@ export(leave_positive_loss)
 
 export(make_base_risk)
 export(join_info)
+export(lapse2dist)
+export(dist2lapse)
 export(random_pay_num)
 export(get_rp_matrix)
 export(apply_expiration)

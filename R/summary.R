@@ -31,7 +31,7 @@ get_info <- function(x) {
              prop = 1-missing/nrows, mode)
 }
 
-prop_table <- function(x, digits = 1) {
+prop_table <- function(x, digits = 2) {
   v <- unilen(x)
   if (v >= 1000)
     stop("Distinct values >= 100")

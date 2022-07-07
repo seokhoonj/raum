@@ -110,6 +110,8 @@ minmax_scaler <- function(x) if (length(x) > 1) (x - min(x)) / (max(x) - min(x))
 
 # vector ------------------------------------------------------------------
 
+nolast <- function(x) x[-length(x)]
+
 change_point <- function(x) which(x[-1L] != x[-length(x)]) + 1
 
 change_interval <- function(x) diff(c(1, change_point(x), length(x)+1))

@@ -17,7 +17,7 @@ join_info <- function(risk_info, claim_info) {
     risk, risk2,
     rate, rate2,
     amount_mean,
-    rp_times, # claim_times,
+    rp_times, claim_times,
     reduction_period_start,
     reduction_period_end,
     reduction_period_ratio,
@@ -25,10 +25,20 @@ join_info <- function(risk_info, claim_info) {
   ])
 }
 
+to_monthly_lapse <- function(x) 1-(1-x)^(1/12)
+
+lapse2dist <- function(x) {
+  p <- cumprod(1-x)
+  abs(diff(c(1, p, 0)))
+}
+
+dist2lapse <- function(x) {
+  c(x[1L], 1-exp(diff(log(1-cumsum(x)))))
+}
+
 random_pay_num <- function(df, lapse, mon, seed) {
   uid <- unique(df$id)
-  persistency <- cumprod(1-lapse)
-  prob <- abs(diff(c(1, persistency[1:(mon-1)], 0)))
+  prob <- lapse2dist(lapse[1:(mon-1)])
   if (!missing(seed)) set.seed(seed)
   structure(colvec(sample(
     seq_len(mon), size = length(uid), replace = T, prob = prob)),
@@ -135,8 +145,8 @@ count_pay_num <- function(claim_info, df, udate, mon, waiting = T) {
   cvd_kcd    <- claim_info$cvd_kcd
   one_time   <- claim_info$one_time
   expiration <- claim_info$expiration
-  waiting_period_start <- claim_info$waiting_period_start * 12
-  waiting_period_end   <- claim_info$waiting_period_end * 12
+  waiting_period_start <- claim_info$waiting_period_start
+  waiting_period_end   <- claim_info$waiting_period_end
 
   # order
   setorder(df, id, sdate, edate)
