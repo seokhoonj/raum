@@ -94,6 +94,40 @@ equal <- function(x, y) {
   sapply(colnames(x), function(col) all(x[[col]]==y[[col]]))
 }
 
+setcolafter <- function(df, cols, after = NA) {
+  cols <- match_cols(df, vapply(substitute(cols), deparse, "character"))
+  after <- deparse(substitute(after))
+  all_cols <- colnames(df)
+  cols_pos <- sapply(cols, function(x) which(all_cols == x), USE.NAMES = F)
+  rest_pos <- which(!all_cols %in% cols)
+  if (missing(after)) {
+    neworder <- c(cols_pos, rest_pos)
+  } else {
+    after_pos <- which(all_cols == after)
+    head_order <- rest_pos[rest_pos <= after_pos]
+    tail_order <- rest_pos[rest_pos  > after_pos]
+    new_order <- c(head_order, cols_pos, tail_order)
+  }
+  new_cols <- all_cols[new_order]
+  setcolorder(df, new_cols)
+}
+
+setcolafter_ <- function(df, cols, after = NA) {
+  all_cols <- colnames(df)
+  cols_pos <- sapply(cols, function(x) which(all_cols == x), USE.NAMES = F)
+  rest_pos <- which(!all_cols %in% cols)
+  if (missing(after)) {
+    neworder <- c(cols_pos, rest_pos)
+  } else {
+    after_pos <- which(all_cols == after)
+    head_order <- rest_pos[rest_pos <= after_pos]
+    tail_order <- rest_pos[rest_pos  > after_pos]
+    new_order <- c(head_order, cols_pos, tail_order)
+  }
+  new_cols <- all_cols[new_order]
+  setcolorder(df, new_cols)
+}
+
 #' Merge data frames
 #'
 #' This function merges several data frames at once
