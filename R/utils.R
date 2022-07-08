@@ -128,6 +128,15 @@ setcolafter_ <- function(df, cols, after = NA) {
   setcolorder(df, new_cols)
 }
 
+set_sum <- function(df, cols, value_name = "sum") {
+  cols <- match_cols(df, vapply(substitute(cols), deparse, "character"))
+  set(df, j = value_name, value = apply(df[, ..cols], 1, sum))
+}
+
+set_sum_ <- function(df, cols, value_name = "sum") {
+  set(df, j = value_name, value = apply(df[, ..cols], 1, sum))
+}
+
 #' Merge data frames
 #'
 #' This function merges several data frames at once

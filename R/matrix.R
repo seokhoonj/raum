@@ -154,18 +154,41 @@ replace_chr_na <- function(df) {
 
 # calculation -------------------------------------------------------------
 
-setmul <- function(x, y, axis = 1) {
+setmul <- function(x, y, axis = c(1, 2)) {
   if (!is.matrix(x) | !is.numeric(x) | !is.numeric(y))
     stop("invalid input")
-  ylen <- length(y)
-  mdim <- if (!is.null(dim(y))) min(dim(y), na.rm = TRUE) else 0
-  if (mdim > 1)
+  xdim <- dim(x); ydim <- dim(y)
+  if (is.null(ydim)) {
+    ylen <- length(y)
+    if (ylen > 1) {
+      if (xdim[1L] != xdim[2L]) {
+        if (xdim[1L] == ylen) {
+          ydim <- c(ylen, 1)
+          y <- colvec(y)
+        } else if (xdim[2L] == ylen) {
+          ydim <- c(1, ylen)
+          y <- rowvec(y)
+        }
+      } else {
+        if (axis[1L] == 1) {
+          ydim <- c(ylen, 1)
+          y <- colvec(y)
+        } else {
+          ydim <- c(1, ylen)
+          y <- rowvec(y)
+        }
+      }
+    } else {
+      ydim <- c(0, 0)
+    }
+  }
+  if (all(xdim == ydim))
     return(invisible(.Call(raum_setmul_mat, x, y)))
-  if (mdim <= 1 & ylen > 1 & axis == 1)
+  if (any(xdim == ydim) & axis[1L] == 1)
     return(invisible(.Call(raum_setmul_row, x, rowvec(y))))
-  if (mdim <= 1 & ylen > 1 & axis == 2)
+  if (any(xdim == ydim) & axis[1L] == 2)
     return(invisible(.Call(raum_setmul_col, x, colvec(y))))
-  if (ylen == 1)
+  if (!all(xdim == ydim))
     return(invisible(.Call(raum_setmul_num, x, y)))
 }
 

@@ -1,4 +1,4 @@
-make_base_risk <- function(no = 0, risk = "base", gender = c(1L, 2L), age = 0:120, grade = 0, rate = 1.) {
+create_base_risk <- function(no = 0, risk = "base", gender = c(1L, 2L), age = 0:120, grade = 0, rate = 1.) {
   base_risk <- data.table(expand.grid(
     no = no, risk = risk, gender = as.factor(gender), age = age, grade = grade, rate = rate,
     stringsAsFactors = FALSE))
@@ -21,6 +21,8 @@ join_info <- function(risk_info, claim_info) {
     reduction_period_start,
     reduction_period_end,
     reduction_period_ratio,
+    waiting_period_start,
+    waiting_period_end,
     proportion)
   ])
 }
@@ -45,45 +47,52 @@ random_pay_num <- function(df, lapse, mon, seed) {
     dimnames = list(uid, NULL))
 }
 
-get_rp_matrix <- function(risk_info, claim_info, igender, iage, igrade, mon, prop = F, unit = 1, type = c("rider", "risk")) {
-  rn <- unique(claim_info$rn)
-  rider <- unique(claim_info$rider)
-  rider_list <- vector(mode = "list", length(rider))
-  for (j in seq_along(rider)) {
+create_rp_matrix <- function(risk_info, claim_info, igender, iage, igrade, mon, waiting = TRUE, unit = 1, type = c("rider", "risk")) {
+  urn <- unique(claim_info$rn)
+  urider <- unique(claim_info$rider)
+  rider_list <- vector(mode = "list", length(urider))
+  for (j in seq_along(urider)) {
     # variables
-    iages <- iage + seq_len((mon-1)%/%12 + 1L) - 1L
+    iages <- iage + seq_len((mon-1)%/%12+1L) - 1L
     igrades <- unique(c(0, igrade))
     # join info
-    rid_info <- claim_info[rider == rider[j]]
-    tot_info <- join_info(risk_info, rid_info)
-    app_info <- tot_info[(gender == igender) & (age %in% iages) & (grade %in% igrades)]
-    # info subset
-    if (!nrow(app_info))
+    rider_info <- claim_info[rider == urider[j]]
+    total_info <- join_info(risk_info, rider_info)
+    sub_info   <- total_info[(gender  ==  igender) &
+                             (age    %in% iages  ) &
+                             (grade  %in% igrades)]
+    if (!nrow(sub_info))
       stop("The insured has no risk rate")
-    risk_list <- vector(mode = "list", length(nrow(rid_info)))
-    for (i in seq_len(nrow(rid_info))) {
-      app_tbl <- app_info[(risk == rid_info$risk[i] &
-                           reduction_period_start == rid_info$reduction_period_start[i] &
-                           reduction_period_end   == rid_info$reduction_period_end[i] &
-                           reduction_period_ratio == rid_info$reduction_period_ratio[i])]
-      rp_tbl <- app_tbl[, .(age, rp = rate * rate2 * amount_mean / 12)]
-      rp_mat <- reprow(rowvec(rp_tbl$rp), 12)
-      pd_mat <- numbers(dim(rp_mat))
-      reduction_period_start  <- app_tbl$reduction_period_start
-      reduction_period_end    <- app_tbl$reduction_period_end
-      reduction_period_ratio  <- app_tbl$reduction_period_ratio
-      rd_mat <- ratio_by_period(pd_mat,
-                                reduction_period_start,
-                                reduction_period_end,
-                                reduction_period_ratio) # to be modified
-      rp <- structure(rp_mat * rd_mat, dimnames = list(1:12, app_tbl$age))
+    risk_list <- vector(mode = "list", nrow(rider_info))
+    for (i in seq_len(nrow(rider_info))) {
+      sub_tbl <- sub_info[(risk == rider_info$risk[i] &
+                           reduction_period_start == rider_info$reduction_period_start[i] &
+                           reduction_period_end   == rider_info$reduction_period_end[i] &
+                           reduction_period_ratio == rider_info$reduction_period_ratio[i])]
+      rp_mon <- with(sub_tbl, rate * rate2 * amount_mean / 12)
+      rp  <- reprow(rowvec(rp_mon), 12L)
+      prd <- numbers(dim(rp))
+      rat <- ratio_by_period(prd,
+                             sub_tbl$reduction_period_start,
+                             sub_tbl$reduction_period_end,
+                             sub_tbl$reduction_period_ratio) # to be modified
+      setmul(rp, rat)
+      if (waiting) {
+        wai <- ratio_by_period(prd,
+                               sub_tbl$waiting_period_start,
+                               sub_tbl$waiting_period_end,
+                               rep(0, nrow(sub_tbl)))
+        setmul(rp, wai)
+      }
+      setdimnames(rp, list(seq_len(12L), sub_tbl$age))
       risk_list[[i]] <- structure(
-        colvec(rp[seq_len(mon)]), dimnames = list(NULL, rid_info$risk[i]))
-    } # waiting period?
-    z <- row_min_by_cn(do.call("cbind", risk_list))
-    if (type[[1L]] == "rider") {
-      z <- structure(colvec(row_sum(z)), dimnames = list(NULL, rn[j]))
+        colvec(rp[seq_len(mon)]),
+        dimnames = list(NULL, rider_info$risk[i])
+      )
     }
+    z <- row_min_by_cn(do.call("cbind", risk_list))
+    if (type[[1L]] == "rider")
+      z <- structure(colvec(row_sum(z)), dimnames = list(NULL, urn[j]))
     rider_list[[j]] <- z
   }
   zs <- do.call("cbind", rider_list)
@@ -168,6 +177,7 @@ count_pay_num <- function(claim_info, df, udate, mon, waiting = T) {
   if (waiting) {
     clm_wai <- as_integer(ratio_by_period(as_double(clm_prd), waiting_period_start*12, waiting_period_end*12, rep(0, length(rn))))
     setmul(clm, clm_wai)
+    rm(clm_wai); gc()
   }
   # payment before the first claim (Don't be confused due to 'max')
   replace_val_in_mat(clm_prd, 0L, clm, 0L) # set_num_on_other_mat_loc
@@ -215,7 +225,7 @@ rp_simulation <- function(risk_info, claim_info, df, udate, mon = 60, group = 1L
     igender <- demo$gender[i]
     igrade  <- unique(c(0, demo$grade[i]))
     # risk premium matrix
-    rp  <- get_rp_matrix(risk_info, claim_info, igender, iage, igrade, mon, unit = unit) # Male: 1, Female: 2
+    rp  <- create_rp_matrix(risk_info, claim_info, igender, iage, igrade, mon, waiting = waiting, unit = unit) # Male: 1, Female: 2
     # subset pay_count
     ipay <- pay_count[age == iage & gender == igender & grade %in% igrade]
     # create variables

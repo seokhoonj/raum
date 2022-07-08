@@ -178,11 +178,17 @@ loss_simulation <- function(claim_info, df, udate, mon = 60, group = 1, unit = 1
   setdimnames(clm_prd, list(id, rn)) # not label because of the expiration conditions
   # reduction ratio
   cat("applying reduction period ratio...\n")
-  clm_red <- ratio_by_period(as_double(clm_prd), reduction_period_start, reduction_period_end, reduction_period_ratio)
+  clm_red <- ratio_by_period(as_double(clm_prd),
+                             reduction_period_start,
+                             reduction_period_end,
+                             reduction_period_ratio)
   # waiting period
   if (waiting) {
     cat("applying waiting period...\n")
-    clm_wai <- ratio_by_period(as_double(clm_prd), waiting_period_start, waiting_period_end, rep(1, length(rn))) # to be modified
+    clm_wai <- ratio_by_period(as_double(clm_prd),
+                               waiting_period_start,
+                               waiting_period_end,
+                               rep(0, length(rn)))
     setmul(clm_red, clm_wai)
     rm(clm_wai); gc()
   }
